@@ -3,6 +3,7 @@ package core;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -24,6 +25,8 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import javax.imageio.ImageIO;
+import java.awt.image.RenderedImage;
 import java.io.File;
 
 import static jdk.nashorn.internal.objects.NativeMath.max;
@@ -53,7 +56,7 @@ public class Main extends Application {
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("Plik");
         menuBar.getMenus().addAll(menuFile);
-        MenuItem importPicture = new MenuItem("Wczytaj obraz");
+        MenuItem importPicture = new MenuItem("Otwórz");
         importPicture.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -70,6 +73,23 @@ public class Main extends Application {
             }
         });
 
+        MenuItem exportPicture = new MenuItem("Zapisz");
+        exportPicture.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                FileChooser fileChooser = new FileChooser();
+                File file = fileChooser.showSaveDialog(mainStage);
+                if(file!=null) {
+                    RenderedImage renderedImage = SwingFXUtils.fromFXImage(mainImage, null);
+                    try {
+                        ImageIO.write(renderedImage, "png", file);
+                    } catch (Exception ignored) {
+
+                    }
+                }
+            }
+        });
+
         MenuItem close = new MenuItem("Zamknij");
         close.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -78,7 +98,7 @@ public class Main extends Application {
             }
         });
 
-        menuFile.getItems().addAll(importPicture,new SeparatorMenuItem(),close);
+        menuFile.getItems().addAll(importPicture,exportPicture,new SeparatorMenuItem(),close);
 
         mainBorderPane.setTop(menuBar);
 
@@ -131,6 +151,109 @@ public class Main extends Application {
                 }
             }
         });
+
+
+
+        Label redLabel = new Label("Czerwony:");
+
+        redSlider = new Slider();
+        redSlider.setMin(0.1);
+        redSlider.setMax(2.0);
+        redSlider.setValue(1.0);
+        redSlider.setMajorTickUnit(0.1);
+
+        HBox redHBox = new HBox();
+        redHBox.setAlignment(Pos.CENTER);
+        redHBox.getChildren().addAll(redLabel,redSlider);
+
+        redSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                if (mainImage != null) {
+                    for (int i = 0; i < mainImage.getWidth(); i++) {
+                        for (int j = 0; j < mainImage.getHeight(); j++) {
+                            Color color = backupRotatedImage.getPixelReader().getColor(i, j);
+                            double r = color.getRed();
+                            double b = color.getBlue();
+                            double g = color.getGreen();
+
+                            double newR = r * redSlider.getValue();
+                            if(newR>1.0)newR=1.0;
+                            mainImage.getPixelWriter().setColor(i, j, new Color(newR, b, g, 1));
+                        }
+                    }
+                    drawFrame();
+                }
+            }
+        });
+
+        Label greenLabel = new Label("Zielony:");
+
+        greenSlider = new Slider();
+        greenSlider.setMin(0.1);
+        greenSlider.setMax(2.0);
+        greenSlider.setValue(1.0);
+        greenSlider.setMajorTickUnit(0.1);
+
+        HBox greenHBox = new HBox();
+        greenHBox.setAlignment(Pos.CENTER);
+        greenHBox.getChildren().addAll(greenLabel,greenSlider);
+
+        greenSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                if (mainImage != null) {
+                    for (int i = 0; i < mainImage.getWidth(); i++) {
+                        for (int j = 0; j < mainImage.getHeight(); j++) {
+                            Color color = backupRotatedImage.getPixelReader().getColor(i, j);
+                            double r = color.getRed();
+                            double b = color.getBlue();
+                            double g = color.getGreen();
+
+                            double newG = g * greenSlider.getValue();
+                            if(newG>1.0)newG=1.0;
+                            mainImage.getPixelWriter().setColor(i, j, new Color(r, b, newG, 1));
+                        }
+                    }
+                    drawFrame();
+                }
+            }
+        });
+
+
+        Label blueLabel = new Label("Niebieski:");
+
+        blueSlider = new Slider();
+        blueSlider.setMin(0.1);
+        blueSlider.setMax(2.0);
+        blueSlider.setValue(1.0);
+        blueSlider.setMajorTickUnit(0.1);
+
+        HBox blueHBox = new HBox();
+        blueHBox.setAlignment(Pos.CENTER);
+        blueHBox.getChildren().addAll(blueLabel,blueSlider);
+
+        greenSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                if (mainImage != null) {
+                    for (int i = 0; i < mainImage.getWidth(); i++) {
+                        for (int j = 0; j < mainImage.getHeight(); j++) {
+                            Color color = backupRotatedImage.getPixelReader().getColor(i, j);
+                            double r = color.getRed();
+                            double b = color.getBlue();
+                            double g = color.getGreen();
+
+                            double newB = b * blueSlider.getValue();
+                            if(newB>1.0)newB=1.0;
+                            mainImage.getPixelWriter().setColor(i, j, new Color(r, newB, g, 1));
+                        }
+                    }
+                    drawFrame();
+                }
+            }
+        });
+
 
         Button rotateLeftButton = new Button("Obróc w prawo");
         rotateLeftButton.setOnAction(new EventHandler<ActionEvent>() {
@@ -281,6 +404,10 @@ public class Main extends Application {
 
         controlsGridPane.add(brightnessHBox,0,1);
 
+        controlsGridPane.add(redHBox,0,3);
+        controlsGridPane.add(greenHBox,0,4);
+        controlsGridPane.add(blueHBox,0,5);
+
 
         HBox rotationHBox = new HBox();
         rotationHBox.setAlignment(Pos.CENTER);
@@ -358,11 +485,6 @@ public class Main extends Application {
                             brightnessSlider.setValue(1.0);
                             drawFrame();
                         }
-
-
-
-
-
                     }
                 }
                 event.setDropCompleted(success);
@@ -468,6 +590,11 @@ public class Main extends Application {
     private GridPane controlsGridPane;
 
     private Slider brightnessSlider;
+
+    private Slider redSlider;
+    private Slider greenSlider;
+    private Slider blueSlider;
+
 
     private WritableImage mainImage;
     private WritableImage backupImage;
