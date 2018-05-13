@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="PhotoEdiq:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/PhotoEdiq_jar</output-path>
+    <root id="archive" name="PhotoEdiq.jar">
+      <element id="module-output" name="PhotoEdiq" />
+    </root>
+  </artifact>
+</component>
