@@ -10,8 +10,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
@@ -49,8 +48,10 @@ public class PhotoEdiq extends Application {
 
         MenuBar menuBar = new MenuBar();
         Menu menuFile = new Menu("Plik");
-        menuBar.getMenus().addAll(menuFile);
+        Menu menuEdit = new Menu("Edycja");
+        menuBar.getMenus().addAll(menuFile,menuEdit);
         MenuItem importPicture = new MenuItem("Otwórz");
+        importPicture.setAccelerator(new KeyCodeCombination(KeyCode.O,KeyCombination.CONTROL_DOWN));
         importPicture.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
             File file = fileChooser.showOpenDialog(primaryStage);
@@ -76,6 +77,7 @@ public class PhotoEdiq extends Application {
         });
 
         MenuItem exportPicture = new MenuItem("Zapisz");
+        exportPicture.setAccelerator(new KeyCodeCombination(KeyCode.S,KeyCombination.CONTROL_DOWN));
         exportPicture.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setInitialFileName("edited.png");
@@ -108,9 +110,111 @@ public class PhotoEdiq extends Application {
         });
 
         MenuItem close = new MenuItem("Opuść program");
+        close.setAccelerator(new KeyCodeCombination(KeyCode.Q,KeyCombination.CONTROL_DOWN));
         close.setOnAction(event -> System.exit(0));
 
         menuFile.getItems().addAll(importPicture,exportPicture,closePhoto,new SeparatorMenuItem(),close);
+
+        rotateLeftMenuItem = new MenuItem("Obróc w lewo");
+        rotateLeftMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.L,KeyCombination.CONTROL_DOWN));
+        rotateLeftMenuItem.setOnAction(event -> {
+            if(mainImage!=null) {
+                WritableImage rotatedImage = new WritableImage((int) mainImage.getHeight(), (int) mainImage.getWidth());
+
+                for (int i = 0; i < mainImage.getHeight(); i++) {
+                    for (int j = 0; j < mainImage.getWidth(); j++) {
+
+                        rotatedImage.getPixelWriter().setColor(i, j, mainImage.getPixelReader().getColor((int) mainImage.getWidth() - 1 - j, i));
+                    }
+                }
+
+                mainImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
+                backupRotatedImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
+
+                for(int i = 0 ; i < rotatedImage.getWidth();i++) {
+                    for(int j = 0 ; j < rotatedImage.getHeight();j++) {
+                        mainImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
+                        backupRotatedImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
+                    }
+                }
+
+                drawFrame();
+            }
+        });
+
+        rotateRightMenuItem = new MenuItem("Obróc w prawo");
+        rotateRightMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.R,KeyCombination.CONTROL_DOWN));
+        rotateRightMenuItem.setOnAction(event -> {
+            if(mainImage!=null) {
+                WritableImage rotatedImage = new WritableImage((int) mainImage.getHeight(), (int) mainImage.getWidth());
+
+                for (int i = 0; i < mainImage.getHeight(); i++) {
+                    for (int j = 0; j < mainImage.getWidth(); j++) {
+
+                        rotatedImage.getPixelWriter().setColor(i, j, mainImage.getPixelReader().getColor(j, (int) mainImage.getHeight() - 1 - i));
+                    }
+                }
+                mainImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
+                backupRotatedImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
+
+                for(int i = 0 ; i < rotatedImage.getWidth();i++) {
+                    for(int j = 0 ; j < rotatedImage.getHeight();j++) {
+                        mainImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
+                        backupRotatedImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
+                    }
+                }
+
+                drawFrame();
+            }
+
+        });
+
+        flipHorizontal = new MenuItem("Przerzuć w pionie");
+        flipHorizontal.setOnAction(event -> {
+            if(mainImage!=null) {
+                for (int i = 0; i < mainImage.getWidth(); i++) {
+                    for (int j = 0; j < mainImage.getHeight()/2.0; j++) {
+                            Color tmp = mainImage.getPixelReader().getColor(i,j);
+                            mainImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor(i,(int)mainImage.getHeight()-1-j));
+                            mainImage.getPixelWriter().setColor(i,(int)mainImage.getHeight()-1-j,tmp);
+                            backupRotatedImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor(i,j));
+                        }
+                    }
+                    drawFrame();
+            }
+        });
+
+        flipVertical = new MenuItem("Przerzuć w poziomie");
+        flipVertical.setOnAction(event -> {
+            if(mainImage!=null) {
+                for (int i = 0; i < mainImage.getWidth()/2.0; i++) {
+                    for (int j = 0; j < mainImage.getHeight(); j++) {
+                        Color tmp = mainImage.getPixelReader().getColor(i,j);
+                        mainImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor((int)mainImage.getWidth()-1-i,j));
+                        mainImage.getPixelWriter().setColor((int)mainImage.getWidth()-1-i,j,tmp);
+                        backupRotatedImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor(i,j));
+                    }
+                }
+                drawFrame();
+            }
+        });
+
+        restoreDefaultMenuItem = new MenuItem("Przywróć początkowy");
+        restoreDefaultMenuItem.setOnAction(event -> {
+            mainImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
+            backupRotatedImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
+            for(int i = 0 ; i < mainImage.getWidth();i++) {
+                for(int j = 0; j < mainImage.getHeight();j++)  {
+                    mainImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
+                    backupRotatedImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
+                }
+            }
+            resetSliders();
+
+            drawFrame();
+        });
+
+        menuEdit.getItems().addAll(rotateLeftMenuItem,rotateRightMenuItem,new SeparatorMenuItem(),flipHorizontal,flipVertical, new SeparatorMenuItem(),restoreDefaultMenuItem);
 
         mainBorderPane.setTop(menuBar);
 
@@ -245,63 +349,6 @@ public class PhotoEdiq extends Application {
             }
         });
 
-
-
-
-        rotateLeftButton = new Button("Obróc w prawo");
-        rotateLeftButton.setOnAction(event -> {
-            if(mainImage!=null) {
-                WritableImage rotatedImage = new WritableImage((int) mainImage.getHeight(), (int) mainImage.getWidth());
-
-                for (int i = 0; i < mainImage.getHeight(); i++) {
-                    for (int j = 0; j < mainImage.getWidth(); j++) {
-
-                        rotatedImage.getPixelWriter().setColor(i, j, mainImage.getPixelReader().getColor(j, (int) mainImage.getHeight() - 1 - i));
-                    }
-                }
-                mainImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
-                backupRotatedImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
-
-                for(int i = 0 ; i < rotatedImage.getWidth();i++) {
-                    for(int j = 0 ; j < rotatedImage.getHeight();j++) {
-                        mainImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
-                        backupRotatedImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
-                    }
-                }
-
-                drawFrame();
-            }
-
-        });
-
-        rotateRightButton = new Button("Obróć w lewo");
-        rotateRightButton.setOnAction(event -> {
-            if(mainImage!=null) {
-                WritableImage rotatedImage = new WritableImage((int) mainImage.getHeight(), (int) mainImage.getWidth());
-
-                for (int i = 0; i < mainImage.getHeight(); i++) {
-                    for (int j = 0; j < mainImage.getWidth(); j++) {
-
-                        rotatedImage.getPixelWriter().setColor(i, j, mainImage.getPixelReader().getColor((int) mainImage.getWidth() - 1 - j, i));
-                    }
-                }
-
-                mainImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
-                backupRotatedImage = new WritableImage((int) rotatedImage.getWidth(),(int)rotatedImage.getHeight());
-
-                for(int i = 0 ; i < rotatedImage.getWidth();i++) {
-                    for(int j = 0 ; j < rotatedImage.getHeight();j++) {
-                        mainImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
-                        backupRotatedImage.getPixelWriter().setColor(i,j,rotatedImage.getPixelReader().getColor(i,j));
-                    }
-                }
-
-                drawFrame();
-            }
-
-        });
-
-
         Label blackAndWhiteFiltersLabel = new Label("Filtry czarnobiałe:");
         blackAndWhiteFiltersLabel.setMaxWidth(Double.MAX_VALUE);
         blackAndWhiteFiltersLabel.setAlignment(Pos.CENTER);
@@ -359,23 +406,23 @@ public class PhotoEdiq extends Application {
                 drawFrame();
             }
         });
-
-        restoreDefault = new Button("Przywróc początkowy");
-        restoreDefault.setMaxWidth(Double.MAX_VALUE);
-        restoreDefault.setAlignment(Pos.CENTER);
-        restoreDefault.setOnAction(event -> {
-            mainImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
-            backupRotatedImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
-            for(int i = 0 ; i < mainImage.getWidth();i++) {
-                for(int j = 0; j < mainImage.getHeight();j++)  {
-                    mainImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
-                    backupRotatedImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
-                }
-            }
-            resetSliders();
-
-            drawFrame();
-        });
+//
+//        restoreDefault = new Button("Przywróć początkowy");
+//        restoreDefault.setMaxWidth(Double.MAX_VALUE);
+//        restoreDefault.setAlignment(Pos.CENTER);
+//        restoreDefault.setOnAction(event -> {
+//            mainImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
+//            backupRotatedImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
+//            for(int i = 0 ; i < mainImage.getWidth();i++) {
+//                for(int j = 0; j < mainImage.getHeight();j++)  {
+//                    mainImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
+//                    backupRotatedImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
+//                }
+//            }
+//            resetSliders();
+//
+//            drawFrame();
+//        });
 
         negativeEffect = new Button("Negatyw");
         negativeEffect.setMaxWidth(Double.MAX_VALUE);
@@ -421,12 +468,12 @@ public class PhotoEdiq extends Application {
 
         controlsGridPane.add(bawHBox,0,7,2,1);
 
-        HBox rotationHBox = new HBox();
-        rotationHBox.setAlignment(Pos.CENTER);
-        rotationHBox.getChildren().addAll(rotateRightButton,rotateLeftButton);
-        controlsGridPane.add(rotationHBox,0,8,2,1);
+//        HBox rotationHBox = new HBox();
+//        rotationHBox.setAlignment(Pos.CENTER);
+//        rotationHBox.getChildren().addAll(rotateRightButton,rotateLeftButton);
+//        controlsGridPane.add(rotationHBox,0,8,2,1);
 
-        controlsGridPane.add(restoreDefault,0,9,2,1);
+      //  controlsGridPane.add(restoreDefault,0,9,2,1);
 
         mainStage = primaryStage;
         mainStage.setTitle("PhotoEdiq");
@@ -606,8 +653,11 @@ public class PhotoEdiq extends Application {
         greenSlider.setDisable(true);
         blueSlider.setDisable(true);
 
-        rotateLeftButton.setDisable(true);
-        rotateRightButton.setDisable(true);
+        rotateLeftMenuItem.setDisable(true);
+        rotateRightMenuItem.setDisable(true);
+
+        flipHorizontal.setDisable(true);
+        flipVertical.setDisable(true);
 
         lightnessgreyScaleButton.setDisable(true);
         averagegreyScaleButton.setDisable(true);
@@ -615,7 +665,7 @@ public class PhotoEdiq extends Application {
 
         negativeEffect.setDisable(true);
 
-        restoreDefault.setDisable(true);
+        restoreDefaultMenuItem.setDisable(true);
 
     }
     private void enableAll(){
@@ -624,8 +674,11 @@ public class PhotoEdiq extends Application {
         greenSlider.setDisable(false);
         blueSlider.setDisable(false);
 
-        rotateLeftButton.setDisable(false);
-        rotateRightButton.setDisable(false);
+        rotateLeftMenuItem.setDisable(false);
+        rotateRightMenuItem.setDisable(false);
+
+        flipHorizontal.setDisable(false);
+        flipVertical.setDisable(false);
 
         lightnessgreyScaleButton.setDisable(false);
         averagegreyScaleButton.setDisable(false);
@@ -633,7 +686,7 @@ public class PhotoEdiq extends Application {
 
         negativeEffect.setDisable(false);
 
-        restoreDefault.setDisable(false);
+        restoreDefaultMenuItem.setDisable(false);
     }
 
     private WritableImage mainImage;
@@ -641,8 +694,11 @@ public class PhotoEdiq extends Application {
     private WritableImage backupRotatedImage;
     private Stage mainStage;
 
-    private Button rotateLeftButton;
-    private Button rotateRightButton;
+    private MenuItem rotateLeftMenuItem;
+    private MenuItem rotateRightMenuItem;
+
+    private MenuItem flipHorizontal;
+    private MenuItem flipVertical;
 
     private Button lightnessgreyScaleButton;
     private Button averagegreyScaleButton;
@@ -650,5 +706,5 @@ public class PhotoEdiq extends Application {
 
     private Button negativeEffect;
 
-    private Button restoreDefault;
+    private MenuItem restoreDefaultMenuItem;
 }
