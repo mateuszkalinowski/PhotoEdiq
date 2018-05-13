@@ -19,8 +19,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.net.URL;
 import java.util.Optional;
 
 public class PhotoEdiq extends Application {
@@ -244,6 +246,8 @@ public class PhotoEdiq extends Application {
         });
 
 
+
+
         rotateLeftButton = new Button("Obróc w prawo");
         rotateLeftButton.setOnAction(event -> {
             if(mainImage!=null) {
@@ -373,32 +377,55 @@ public class PhotoEdiq extends Application {
             drawFrame();
         });
 
+        negativeEffect = new Button("Negatyw");
+        negativeEffect.setMaxWidth(Double.MAX_VALUE);
+        negativeEffect.setAlignment(Pos.CENTER);
+
+        negativeEffect.setOnAction(event -> {
+            if (mainImage != null) {
+                for (int i = 0; i < mainImage.getWidth(); i++) {
+                    for (int j = 0; j < mainImage.getHeight(); j++) {
+                        Color color = mainImage.getPixelReader().getColor(i, j);
+                        double r = color.getRed();
+                        double b = color.getBlue();
+                        double g = color.getGreen();
+
+                        mainImage.getPixelWriter().setColor(i, j, new Color(1-r, 1-g, 1-b, 1));
+                    }
+                }
+                drawFrame();
+            }
+        });
+
         mainGridPane.add(controlsGridPane,1,0,1,10);
 
-        controlsGridPane.add(brightnessLabel,0,1);
-        controlsGridPane.add(brightnessSlider,1,1);
+        controlsGridPane.add(brightnessLabel,0,0);
+        controlsGridPane.add(brightnessSlider,1,0);
 
-        controlsGridPane.add(redLabel,0,3);
-        controlsGridPane.add(redSlider,1,3);
-        controlsGridPane.add(greenLabel,0,4);
-        controlsGridPane.add(greenSlider,1,4);
-        controlsGridPane.add(blueLabel,0,5);
-        controlsGridPane.add(blueSlider,1,5);
+        controlsGridPane.add(redLabel,0,2);
+        controlsGridPane.add(redSlider,1,2);
+        controlsGridPane.add(greenLabel,0,3);
+        controlsGridPane.add(greenSlider,1,3);
+        controlsGridPane.add(blueLabel,0,4);
+        controlsGridPane.add(blueSlider,1,4);
+
+        controlsGridPane.add(negativeEffect,0,5,2,1);
 
 
-        HBox rotationHBox = new HBox();
-        rotationHBox.setAlignment(Pos.CENTER);
-        rotationHBox.getChildren().addAll(rotateRightButton,rotateLeftButton);
 
-        controlsGridPane.add(rotationHBox,0,6,2,1);
-
-        controlsGridPane.add(blackAndWhiteFiltersLabel,0,7,2,1);
+        controlsGridPane.add(blackAndWhiteFiltersLabel,0,6,2,1);
 
         HBox bawHBox = new HBox();
         bawHBox.setAlignment(Pos.CENTER);
         bawHBox.getChildren().addAll(lightnessgreyScaleButton,averagegreyScaleButton,luminositygreyScaleButton);
 
-        controlsGridPane.add(bawHBox,0,8,2,1);
+        controlsGridPane.add(bawHBox,0,7,2,1);
+
+        HBox rotationHBox = new HBox();
+        rotationHBox.setAlignment(Pos.CENTER);
+        rotationHBox.getChildren().addAll(rotateRightButton,rotateLeftButton);
+        controlsGridPane.add(rotationHBox,0,8,2,1);
+
         controlsGridPane.add(restoreDefault,0,9,2,1);
 
         mainStage = primaryStage;
@@ -462,6 +489,14 @@ public class PhotoEdiq extends Application {
             event.consume();
         });
         disableAll();
+
+        try {
+            URL iconURL = PhotoEdiq.class.getResource("icon.png");
+            java.awt.Image image = new ImageIcon(iconURL).getImage();
+            com.apple.eawt.Application.getApplication().setDockIconImage(image);
+        } catch (Exception ignored) {
+
+        }
 
     }
 
@@ -578,6 +613,8 @@ public class PhotoEdiq extends Application {
         averagegreyScaleButton.setDisable(true);
         luminositygreyScaleButton.setDisable(true);
 
+        negativeEffect.setDisable(true);
+
         restoreDefault.setDisable(true);
 
     }
@@ -594,6 +631,8 @@ public class PhotoEdiq extends Application {
         averagegreyScaleButton.setDisable(false);
         luminositygreyScaleButton.setDisable(false);
 
+        negativeEffect.setDisable(false);
+
         restoreDefault.setDisable(false);
     }
 
@@ -608,6 +647,8 @@ public class PhotoEdiq extends Application {
     private Button lightnessgreyScaleButton;
     private Button averagegreyScaleButton;
     private Button luminositygreyScaleButton;
+
+    private Button negativeEffect;
 
     private Button restoreDefault;
 }
