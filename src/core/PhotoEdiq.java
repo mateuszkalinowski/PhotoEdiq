@@ -169,7 +169,7 @@ public class PhotoEdiq extends Application {
 
         });
 
-        flipHorizontal = new MenuItem("Przerzuć w pionie");
+        flipHorizontal = new MenuItem("Przerzuć w poziomie");
         flipHorizontal.setOnAction(event -> {
             if(mainImage!=null) {
                 for (int i = 0; i < mainImage.getWidth(); i++) {
@@ -184,7 +184,7 @@ public class PhotoEdiq extends Application {
             }
         });
 
-        flipVertical = new MenuItem("Przerzuć w poziomie");
+        flipVertical = new MenuItem("Przerzuć w pionie");
         flipVertical.setOnAction(event -> {
             if(mainImage!=null) {
                 for (int i = 0; i < mainImage.getWidth()/2.0; i++) {
@@ -201,6 +201,8 @@ public class PhotoEdiq extends Application {
 
         restoreDefaultMenuItem = new MenuItem("Przywróć początkowy");
         restoreDefaultMenuItem.setOnAction(event -> {
+            mainImage = null;
+            backupRotatedImage = null;
             mainImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
             backupRotatedImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
             for(int i = 0 ; i < mainImage.getWidth();i++) {
@@ -210,7 +212,7 @@ public class PhotoEdiq extends Application {
                 }
             }
             resetSliders();
-
+//
             drawFrame();
         });
 
@@ -225,10 +227,15 @@ public class PhotoEdiq extends Application {
         controlsGridPane.getColumnConstraints().addAll(mainColumnInControlsGridPane,mainColumnInControlsGridPane);
 
         RowConstraints oneRowInControlsGridPane = new RowConstraints();
-        oneRowInControlsGridPane.setPercentHeight(10);
-        for(int i = 0; i < 10; i ++)
+        oneRowInControlsGridPane.setPercentHeight(6.5);
+        for(int i = 0; i < 15; i ++)
             controlsGridPane.getRowConstraints().add(oneRowInControlsGridPane);
 
+
+
+        Label basicOperationsLabel = new Label("Podstawowe operacje:");
+        basicOperationsLabel.setMaxWidth(Double.MAX_VALUE);
+        basicOperationsLabel.setAlignment(Pos.CENTER);
 
 
         Label brightnessLabel = new Label("Jasność:");
@@ -264,6 +271,45 @@ public class PhotoEdiq extends Application {
             }
         });
 
+        Label constrastLabel = new Label("Kontrast:");
+        constrastLabel.setMaxWidth(Double.MAX_VALUE);
+        constrastLabel.setAlignment(Pos.CENTER);
+
+        constastSlider = new Slider();
+        constastSlider.setMin(-1.0);
+        constastSlider.setMax(1.0);
+        constastSlider.setValue(0.0);
+        constastSlider.setMajorTickUnit(0.1);
+
+
+        constastSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (mainImage != null) {
+                for (int i = 0; i < mainImage.getWidth(); i++) {
+                    for (int j = 0; j < mainImage.getHeight(); j++) {
+                        Color color = backupRotatedImage.getPixelReader().getColor(i, j);
+                        double r = color.getRed();
+                        double b = color.getBlue();
+                        double g = color.getGreen();
+
+                        double factor = (1.00 * (constastSlider.getValue() + 1.0)) / (1.0 * (1.00 - constastSlider.getValue()));
+
+                        double newR = truncate(factor * (r-0.5) + 0.5);
+                        double newB = truncate(factor * (b-0.5) + 0.5);
+                        double newG = truncate(factor * (g-0.5) + 0.5);
+                        mainImage.getPixelWriter().setColor(i, j, new Color(newR, newG, newB, 1));
+                    }
+                }
+                drawFrame();
+            }
+        });
+
+
+        Label colorsCorrectionLabel = new Label("Korekcja kolorów:");
+        colorsCorrectionLabel.setMaxWidth(Double.MAX_VALUE);
+        colorsCorrectionLabel.setAlignment(Pos.CENTER);
+
+
+
         Label redLabel = new Label("Czerwony:");
         redLabel.setMaxWidth(Double.MAX_VALUE);
         redLabel.setAlignment(Pos.CENTER);
@@ -285,7 +331,7 @@ public class PhotoEdiq extends Application {
 
                         double newR = r * redSlider.getValue();
                         if(newR>1.0)newR=1.0;
-                        mainImage.getPixelWriter().setColor(i, j, new Color(newR, b, g, 1));
+                        mainImage.getPixelWriter().setColor(i, j, new Color(newR, g, b, 1));
                     }
                 }
                 drawFrame();
@@ -353,6 +399,10 @@ public class PhotoEdiq extends Application {
         blackAndWhiteFiltersLabel.setMaxWidth(Double.MAX_VALUE);
         blackAndWhiteFiltersLabel.setAlignment(Pos.CENTER);
 
+        Label filtresLabel = new Label("Filtry:");
+        filtresLabel.setMaxWidth(Double.MAX_VALUE);
+        filtresLabel.setAlignment(Pos.CENTER);
+
         lightnessgreyScaleButton = new Button("Lightness");
         lightnessgreyScaleButton.setOnAction(event -> {
             if (mainImage != null) {
@@ -406,23 +456,6 @@ public class PhotoEdiq extends Application {
                 drawFrame();
             }
         });
-//
-//        restoreDefault = new Button("Przywróć początkowy");
-//        restoreDefault.setMaxWidth(Double.MAX_VALUE);
-//        restoreDefault.setAlignment(Pos.CENTER);
-//        restoreDefault.setOnAction(event -> {
-//            mainImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
-//            backupRotatedImage = new WritableImage((int)backupImage.getWidth(),(int)backupImage.getHeight());
-//            for(int i = 0 ; i < mainImage.getWidth();i++) {
-//                for(int j = 0; j < mainImage.getHeight();j++)  {
-//                    mainImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
-//                    backupRotatedImage.getPixelWriter().setColor(i,j,backupImage.getPixelReader().getColor(i,j));
-//                }
-//            }
-//            resetSliders();
-//
-//            drawFrame();
-//        });
 
         negativeEffect = new Button("Negatyw");
         negativeEffect.setMaxWidth(Double.MAX_VALUE);
@@ -446,34 +479,31 @@ public class PhotoEdiq extends Application {
 
         mainGridPane.add(controlsGridPane,1,0,1,10);
 
-        controlsGridPane.add(brightnessLabel,0,0);
-        controlsGridPane.add(brightnessSlider,1,0);
+        controlsGridPane.add(basicOperationsLabel,0,0,2,1);
+        controlsGridPane.add(brightnessLabel,0,1);
+        controlsGridPane.add(brightnessSlider,1,1);
+        //controlsGridPane.add(constrastLabel,0,2);
+        //controlsGridPane.add(constastSlider,1,2);
 
-        controlsGridPane.add(redLabel,0,2);
-        controlsGridPane.add(redSlider,1,2);
-        controlsGridPane.add(greenLabel,0,3);
-        controlsGridPane.add(greenSlider,1,3);
-        controlsGridPane.add(blueLabel,0,4);
-        controlsGridPane.add(blueSlider,1,4);
+        controlsGridPane.add(colorsCorrectionLabel,0,4,2,1);
+        controlsGridPane.add(redLabel,0,5);
+        controlsGridPane.add(redSlider,1,5);
+        controlsGridPane.add(greenLabel,0,6);
+        controlsGridPane.add(greenSlider,1,6);
+        controlsGridPane.add(blueLabel,0,7);
+        controlsGridPane.add(blueSlider,1,7);
 
-        controlsGridPane.add(negativeEffect,0,5,2,1);
+        controlsGridPane.add(filtresLabel,0,11,2,1);
 
+        controlsGridPane.add(negativeEffect,0,12,2,1);
 
-
-        controlsGridPane.add(blackAndWhiteFiltersLabel,0,6,2,1);
+        controlsGridPane.add(blackAndWhiteFiltersLabel,0,13,2,1);
 
         HBox bawHBox = new HBox();
         bawHBox.setAlignment(Pos.CENTER);
         bawHBox.getChildren().addAll(lightnessgreyScaleButton,averagegreyScaleButton,luminositygreyScaleButton);
 
-        controlsGridPane.add(bawHBox,0,7,2,1);
-
-//        HBox rotationHBox = new HBox();
-//        rotationHBox.setAlignment(Pos.CENTER);
-//        rotationHBox.getChildren().addAll(rotateRightButton,rotateLeftButton);
-//        controlsGridPane.add(rotationHBox,0,8,2,1);
-
-      //  controlsGridPane.add(restoreDefault,0,9,2,1);
+        controlsGridPane.add(bawHBox,0,14,2,1);
 
         mainStage = primaryStage;
         mainStage.setTitle("PhotoEdiq");
@@ -631,16 +661,29 @@ public class PhotoEdiq extends Application {
         launch(args);
     }
 
+    private double truncate(double value) {
+        if(value>=1.0)
+            return value-1.0;
+        else if(value<=0.0)
+            return value+1.0;
+        else
+            return value;
+    }
+
     private Canvas mainPictureCanvas = new Canvas();
 
     private Slider brightnessSlider;
+    private Slider constastSlider;
+
 
     private Slider redSlider;
     private Slider greenSlider;
     private Slider blueSlider;
 
+
     private void resetSliders(){
         brightnessSlider.setValue(1.0);
+        constastSlider.setValue(0.0);
 
         redSlider.setValue(1.0);
         greenSlider.setValue(1.0);
@@ -649,6 +692,8 @@ public class PhotoEdiq extends Application {
 
     private void disableAll(){
         brightnessSlider.setDisable(true);
+        constastSlider.setDisable(true);
+
         redSlider.setDisable(true);
         greenSlider.setDisable(true);
         blueSlider.setDisable(true);
@@ -670,6 +715,8 @@ public class PhotoEdiq extends Application {
     }
     private void enableAll(){
         brightnessSlider.setDisable(false);
+        constastSlider.setDisable(false);
+
         redSlider.setDisable(false);
         greenSlider.setDisable(false);
         blueSlider.setDisable(false);
