@@ -76,7 +76,7 @@ public class PhotoEdiq extends Application {
             }
         });
 
-        MenuItem exportPicture = new MenuItem("Zapisz");
+        exportPicture = new MenuItem("Zapisz");
         exportPicture.setAccelerator(new KeyCodeCombination(KeyCode.S,KeyCombination.CONTROL_DOWN));
         exportPicture.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
@@ -92,7 +92,7 @@ public class PhotoEdiq extends Application {
             }
         });
 
-        MenuItem closePhoto = new MenuItem("Zamknij zdjęcie");
+        closePhoto = new MenuItem("Zamknij zdjęcie");
         closePhoto.setOnAction(event -> {
 
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -395,7 +395,7 @@ public class PhotoEdiq extends Application {
             }
         });
 
-        Label blackAndWhiteFiltersLabel = new Label("Filtry czarnobiałe:");
+        Label blackAndWhiteFiltersLabel = new Label("Skala szarości:");
         blackAndWhiteFiltersLabel.setMaxWidth(Double.MAX_VALUE);
         blackAndWhiteFiltersLabel.setAlignment(Pos.CENTER);
 
@@ -457,6 +457,11 @@ public class PhotoEdiq extends Application {
             }
         });
 
+        HBox effectsHBox = new HBox();
+        effectsHBox.setSpacing(4);
+        effectsHBox.setAlignment(Pos.CENTER);
+
+
         negativeEffect = new Button("Negatyw");
         negativeEffect.setMaxWidth(Double.MAX_VALUE);
         negativeEffect.setAlignment(Pos.CENTER);
@@ -473,17 +478,197 @@ public class PhotoEdiq extends Application {
                         mainImage.getPixelWriter().setColor(i, j, new Color(1-r, 1-g, 1-b, 1));
                     }
                 }
+                for(int i = 0; i < mainImage.getWidth();i++) {
+                    for(int j = 0; j < mainImage.getHeight();j++) {
+                        backupRotatedImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor(i,j));
+                    }
+                }
                 drawFrame();
             }
         });
+
+        sepiaEffect = new Button("Sepia");
+        sepiaEffect.setMaxWidth(Double.MAX_VALUE);
+        sepiaEffect.setAlignment(Pos.CENTER);
+
+        sepiaEffect.setOnAction(event -> {
+            if (mainImage != null) {
+                for (int i = 0; i < mainImage.getWidth(); i++) {
+                    for (int j = 0; j < mainImage.getHeight(); j++) {
+                        Color color = mainImage.getPixelReader().getColor(i, j);
+                        double r = color.getRed();
+                        double b = color.getBlue();
+                        double g = color.getGreen();
+
+                        double newR = 0.393 * r + 0.769 * g + 0.189 * b;
+                        double newG = 0.349 * r + 0.686 * g + 0.168* b;
+                        double newB = 0.272 * r + 0.534 * g + 0.131 * b;
+
+                        if(newR>1.0)newR=1.0;
+                        if(newG>1.0)newG=1.0;
+                        if(newB>1.0)newB=1.0;
+
+                        mainImage.getPixelWriter().setColor(i, j, new Color(newR, newG, newB, 1));
+                    }
+                }
+                for(int i = 0; i < mainImage.getWidth();i++) {
+                    for(int j = 0; j < mainImage.getHeight();j++) {
+                        backupRotatedImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor(i,j));
+                    }
+                }
+                drawFrame();
+            }
+        });
+
+        effectsHBox.getChildren().addAll(negativeEffect,sepiaEffect);
+
+
+        HBox meanFilterHBox = new HBox();
+
+        meanFilterHBox.setSpacing(4);
+        meanFilterHBox.setAlignment(Pos.CENTER);
+
+        meanFilterButton = new Button("Filtr uśredniający");
+        meanFilterButton.setMaxWidth(Double.MAX_VALUE);
+        meanFilterButton.setAlignment(Pos.CENTER);
+
+        meanFilterButton.setOnAction(event -> {
+            int mask = Integer.parseInt(maskComboBox.getSelectionModel().getSelectedItem().split("x")[0]);
+
+            int maxJ = 0;
+            int maxI = 0;
+
+            for(int i = 0; i <= mainImage.getWidth()-mask;i+=mask){
+                maxI = i;
+                for(int j = 0; j <= mainImage.getHeight()-mask;j+=mask) {
+                    maxJ = j;
+                    double avgRed = 0;
+                    double avgGreen = 0;
+                    double avgBlue = 0;
+                    for (int k = i; k < i + mask; k++) {
+                        for (int l = j; l < j + mask; l++) {
+                            avgRed += mainImage.getPixelReader().getColor(k, l).getRed();
+                            avgGreen += mainImage.getPixelReader().getColor(k, l).getGreen();
+                            avgBlue += mainImage.getPixelReader().getColor(k, l).getBlue();
+                        }
+                    }
+
+                    avgRed = avgRed / (mask * mask * 1.0);
+                    avgGreen = avgGreen / (mask * mask * 1.0);
+                    avgBlue = avgBlue / (mask * mask * 1.0);
+//                    System.out.println(avgRed + " " + avgGreen + " " + avgBlue);
+
+                    for (int k = i; k < i + mask; k++) {
+                        for (int l = j; l < j + mask; l++) {
+                            Color newColor = new Color(avgRed, avgGreen, avgBlue, 1);
+                            mainImage.getPixelWriter().setColor(k, l, newColor);
+                        }
+                    }
+                }
+            }
+
+            for(int i = 0; i <= mainImage.getWidth()-mask;i+=mask){
+                double avgRed = 0;
+                double avgGreen = 0;
+                double avgBlue = 0;
+                double counter = 0.0;
+                for (int k = i; k < i + mask; k++) {
+                    for (int l = maxJ; l < (int)mainImage.getHeight(); l++) {
+                        avgRed += mainImage.getPixelReader().getColor(k, l).getRed();
+                        avgGreen += mainImage.getPixelReader().getColor(k, l).getGreen();
+                        avgBlue += mainImage.getPixelReader().getColor(k, l).getBlue();
+                        counter++;
+                    }
+                }
+
+                avgRed = avgRed / counter;
+                avgGreen = avgGreen / counter;
+                avgBlue = avgBlue / counter;
+
+                for (int k = i; k < i + mask; k++) {
+                    for (int l = maxJ; l < (int)mainImage.getHeight(); l++) {
+                        Color newColor = new Color(avgRed, avgGreen, avgBlue, 1);
+                        mainImage.getPixelWriter().setColor(k, l, newColor);
+                    }
+                }
+            }
+
+            for(int j = 0; j <= mainImage.getHeight()-mask;j+=mask) {
+                double avgRed = 0;
+                double avgGreen = 0;
+                double avgBlue = 0;
+                double counter = 0.0;
+
+                for (int k = maxI; k < (int)mainImage.getWidth(); k++) {
+                    for (int l = j; l < j + mask; l++) {
+                        avgRed += mainImage.getPixelReader().getColor(k, l).getRed();
+                        avgGreen += mainImage.getPixelReader().getColor(k, l).getGreen();
+                        avgBlue += mainImage.getPixelReader().getColor(k, l).getBlue();
+                        counter++;
+                    }
+                }
+
+                avgRed = avgRed / counter;
+                avgGreen = avgGreen / counter;
+                avgBlue = avgBlue / counter;
+
+                for (int k = maxI; k < (int)mainImage.getWidth(); k++) {
+                    for (int l = j; l < j + mask; l++) {
+                        Color newColor = new Color(avgRed, avgGreen, avgBlue, 1);
+                        mainImage.getPixelWriter().setColor(k, l, newColor);
+                    }
+                }
+            }
+
+            double avgRed = 0;
+            double avgGreen = 0;
+            double avgBlue = 0;
+            double counter = 0.0;
+
+            for (int k = maxI; k < (int)mainImage.getWidth(); k++) {
+                for (int l = maxJ; l < (int)mainImage.getHeight(); l++) {
+                    avgRed += mainImage.getPixelReader().getColor(k, l).getRed();
+                    avgGreen += mainImage.getPixelReader().getColor(k, l).getGreen();
+                    avgBlue += mainImage.getPixelReader().getColor(k, l).getBlue();
+                    counter++;
+                }
+            }
+
+            avgRed = avgRed / counter;
+            avgGreen = avgGreen / counter;
+            avgBlue = avgBlue / counter;
+
+            for (int k = maxI; k < (int)mainImage.getWidth(); k++) {
+                for (int l = maxJ; l < (int)mainImage.getHeight(); l++) {
+                    Color newColor = new Color(avgRed, avgGreen, avgBlue, 1);
+                    mainImage.getPixelWriter().setColor(k, l, newColor);
+                }
+            }
+
+            for(int i = 0; i < mainImage.getWidth();i++) {
+                for(int j = 0; j < mainImage.getHeight();j++) {
+                    backupRotatedImage.getPixelWriter().setColor(i,j,mainImage.getPixelReader().getColor(i,j));
+                }
+            }
+
+            drawFrame();
+        });
+
+        Label maskLabel = new Label("Maska:");
+        maskLabel.setMaxWidth(Double.MAX_VALUE);
+        maskLabel.setAlignment(Pos.CENTER);
+
+        maskComboBox = new ComboBox<>();
+        maskComboBox.getItems().addAll("3x3","5x5","7x7","10x10","25x25","50x50","75x75","100x100");
+        maskComboBox.getSelectionModel().select(0);
+
+        meanFilterHBox.getChildren().addAll(meanFilterButton,maskLabel,maskComboBox);
 
         mainGridPane.add(controlsGridPane,1,0,1,10);
 
         controlsGridPane.add(basicOperationsLabel,0,0,2,1);
         controlsGridPane.add(brightnessLabel,0,1);
         controlsGridPane.add(brightnessSlider,1,1);
-        //controlsGridPane.add(constrastLabel,0,2);
-        //controlsGridPane.add(constastSlider,1,2);
 
         controlsGridPane.add(colorsCorrectionLabel,0,4,2,1);
         controlsGridPane.add(redLabel,0,5);
@@ -493,9 +678,10 @@ public class PhotoEdiq extends Application {
         controlsGridPane.add(blueLabel,0,7);
         controlsGridPane.add(blueSlider,1,7);
 
-        controlsGridPane.add(filtresLabel,0,11,2,1);
+        controlsGridPane.add(filtresLabel,0,10,2,1);
 
-        controlsGridPane.add(negativeEffect,0,12,2,1);
+        controlsGridPane.add(meanFilterHBox,0,11,2,1);
+        controlsGridPane.add(effectsHBox,0,12,2,1);
 
         controlsGridPane.add(blackAndWhiteFiltersLabel,0,13,2,1);
 
@@ -507,7 +693,7 @@ public class PhotoEdiq extends Application {
 
         mainStage = primaryStage;
         mainStage.setTitle("PhotoEdiq");
-        Scene mainScene = new Scene(mainBorderPane, 800, 600);
+        Scene mainScene = new Scene(mainBorderPane, 1000, 700);
         mainStage.setScene(mainScene);
         mainStage.show();
 
@@ -691,6 +877,10 @@ public class PhotoEdiq extends Application {
     }
 
     private void disableAll(){
+
+        exportPicture.setDisable(true);
+        closePhoto.setDisable(true);
+
         brightnessSlider.setDisable(true);
         constastSlider.setDisable(true);
 
@@ -709,11 +899,20 @@ public class PhotoEdiq extends Application {
         luminositygreyScaleButton.setDisable(true);
 
         negativeEffect.setDisable(true);
+        sepiaEffect.setDisable(true);
+
+        meanFilterButton.setDisable(true);
 
         restoreDefaultMenuItem.setDisable(true);
 
+        maskComboBox.setDisable(true);
+
     }
     private void enableAll(){
+
+        exportPicture.setDisable(false);
+        closePhoto.setDisable(false);
+
         brightnessSlider.setDisable(false);
         constastSlider.setDisable(false);
 
@@ -732,9 +931,17 @@ public class PhotoEdiq extends Application {
         luminositygreyScaleButton.setDisable(false);
 
         negativeEffect.setDisable(false);
+        sepiaEffect.setDisable(false);
+
+        meanFilterButton.setDisable(false);
 
         restoreDefaultMenuItem.setDisable(false);
+
+        maskComboBox.setDisable(false);
     }
+
+    private MenuItem exportPicture;
+    private MenuItem closePhoto;
 
     private WritableImage mainImage;
     private WritableImage backupImage;
@@ -752,6 +959,11 @@ public class PhotoEdiq extends Application {
     private Button luminositygreyScaleButton;
 
     private Button negativeEffect;
+    private Button sepiaEffect;
+
+    private Button meanFilterButton;
 
     private MenuItem restoreDefaultMenuItem;
+
+    private ComboBox<String> maskComboBox;
 }
